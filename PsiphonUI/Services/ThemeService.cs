@@ -62,10 +62,10 @@ public sealed class ThemeService : IThemeService
         else
         {
 
-            app.Resources["Surface.SubtleBg"] = Brush(0x14, 0xFF, 0xFF, 0xFF);
-            app.Resources["Surface.SubtleBorder"] = Brush(0x22, 0xFF, 0xFF, 0xFF);
-            app.Resources["Surface.HoverBg"] = Brush(0x14, 0xFF, 0xFF, 0xFF);
-            app.Resources["Surface.SelectedBg"] = Brush(0x1F, 0xFF, 0xFF, 0xFF);
+            app.Resources["Surface.SubtleBg"] = Brush(0x1A, 0xFF, 0xFF, 0xFF);
+            app.Resources["Surface.SubtleBorder"] = Brush(0x2E, 0xFF, 0xFF, 0xFF);
+            app.Resources["Surface.HoverBg"] = Brush(0x24, 0xFF, 0xFF, 0xFF);
+            app.Resources["Surface.SelectedBg"] = Brush(0x33, 0xFF, 0xFF, 0xFF);
         }
     }
 

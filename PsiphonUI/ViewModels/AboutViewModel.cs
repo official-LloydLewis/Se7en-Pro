@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using System.Reflection;
 using CommunityToolkit.Mvvm.Input;
+using PsiphonUI.Services;
 
 namespace PsiphonUI.ViewModels;
 
@@ -10,10 +11,10 @@ public sealed partial class AboutViewModel : PageViewModelBase
     public override string Route => "about";
     public override string Icon => "InformationOutline";
 
-    public string AppName => "PsiphonUI";
+    public string AppName => AppBrand.Name;
     public string Version =>
         Assembly.GetExecutingAssembly().GetName().Version?.ToString() ?? "1.0.1";
-    public string Copyright => "Built on Psiphon 3 (GPLv3). Modern UI by PsiphonUI.";
+    public string Copyright => "Built on Psiphon 3 (GPLv3). Modern UI by Se7en Pro.";
 
     [RelayCommand]
     private static void OpenInfoLink() =>
@@ -29,7 +30,7 @@ public sealed partial class AboutViewModel : PageViewModelBase
 
     [RelayCommand]
     private static void OpenGitHub() =>
-        OpenUrl("https://github.com/KNG7-P/Se7en-Pro");
+        OpenUrl(AppBrand.GitHubUrl);
 
     private static void OpenUrl(string url)
     {

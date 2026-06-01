@@ -16,6 +16,7 @@ public sealed class SettingsService : ISettingsService
 
     private readonly ILogger<SettingsService> _logger;
     private readonly string _path;
+    private readonly string _legacyPath;
 
     public UserSettings Settings { get; private set; } = new();
 
@@ -26,24 +27,33 @@ public sealed class SettingsService : ISettingsService
         _logger = logger;
         var dir = Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-            "Psiphon");
+            AppBrand.SafeName);
         Directory.CreateDirectory(dir);
         _path = Path.Combine(dir, "settings.json");
+        _legacyPath = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+            "Psiphon",
+            "settings.json");
     }
 
     public void Load()
     {
         try
         {
-            if (!File.Exists(_path))
+            var loadPath = File.Exists(_path) ? _path : _legacyPath;
+            if (!File.Exists(loadPath))
             {
                 Settings = new UserSettings();
                 Save();
                 return;
             }
 
-            var json = File.ReadAllText(_path);
+            var json = File.ReadAllText(loadPath);
             Settings = JsonSerializer.Deserialize<UserSettings>(json, JsonOpts) ?? new UserSettings();
+            if (!string.Equals(loadPath, _path, StringComparison.OrdinalIgnoreCase))
+            {
+                Save();
+            }
         }
         catch (Exception ex)
         {
