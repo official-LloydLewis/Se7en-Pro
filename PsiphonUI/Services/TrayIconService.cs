@@ -45,7 +45,7 @@ public sealed class TrayIconService : ITrayIconService
         };
 
         var menu = new ContextMenuStrip();
-        var showItem = new ToolStripMenuItem("Show PsiphonUI");
+        var showItem = new ToolStripMenuItem($"Show {AppBrand.Name}");
         showItem.Click += (_, _) => RequestShow?.Invoke(this, EventArgs.Empty);
         menu.Items.Add(showItem);
 
@@ -120,7 +120,7 @@ public sealed class TrayIconService : ITrayIconService
         {
             _notifyIcon?.ShowBalloonTip(
                 2000,
-                "PsiphonUI",
+                AppBrand.Name,
                 "Still running in the system tray. Double-click the icon to restore.",
                 ToolTipIcon.Info);
         }
@@ -139,11 +139,11 @@ public sealed class TrayIconService : ITrayIconService
 
     private static string BuildTooltip(ConnectionState state) => state switch
     {
-        ConnectionState.Connected => "PsiphonUI — Connected",
-        ConnectionState.Connecting => "PsiphonUI — Connecting…",
-        ConnectionState.Disconnecting => "PsiphonUI — Disconnecting…",
-        ConnectionState.Error => "PsiphonUI — Error",
-        _ => "PsiphonUI — Disconnected",
+        ConnectionState.Connected => "Se7en Pro — Connected",
+        ConnectionState.Connecting => "Se7en Pro — Connecting…",
+        ConnectionState.Disconnecting => "Se7en Pro — Disconnecting…",
+        ConnectionState.Error => "Se7en Pro — Error",
+        _ => "Se7en Pro — Disconnected",
     };
 
     private static string BuildToggleConnectionLabel(ConnectionState state) => state switch

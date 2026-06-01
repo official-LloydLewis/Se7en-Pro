@@ -15,12 +15,20 @@ public sealed class StartupReaper : IStartupReaper
     {
 
         var localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
-        var tunnelCoreRoot = Path.Combine(localAppData, "Psiphon", "tunnel-core");
-        var singBoxRoot = Path.Combine(localAppData, "Psiphon", "singbox-tun");
-        var xrayRootLegacy1 = Path.Combine(localAppData, "Psiphon", "xray-tun");
-        var xrayRootLegacy2 = Path.Combine(Path.GetTempPath(), "Psiphon");
+        var tunnelCoreRoot = Path.Combine(localAppData, AppBrand.SafeName, "tunnel-core");
+        var singBoxRoot = Path.Combine(localAppData, AppBrand.SafeName, "singbox-tun");
+        var xrayRootLegacy1 = Path.Combine(localAppData, AppBrand.SafeName, "xray-tun");
+        var tempRoot = Path.Combine(Path.GetTempPath(), AppBrand.SafeName);
+        var legacyTunnelCoreRoot = Path.Combine(localAppData, "Psiphon", "tunnel-core");
+        var legacySingBoxRoot = Path.Combine(localAppData, "Psiphon", "singbox-tun");
+        var legacyXrayRoot = Path.Combine(localAppData, "Psiphon", "xray-tun");
+        var legacyTempRoot = Path.Combine(Path.GetTempPath(), "Psiphon");
 
-        var roots = new[] { tunnelCoreRoot, singBoxRoot, xrayRootLegacy1, xrayRootLegacy2 };
+        var roots = new[]
+        {
+            tunnelCoreRoot, singBoxRoot, xrayRootLegacy1, tempRoot,
+            legacyTunnelCoreRoot, legacySingBoxRoot, legacyXrayRoot, legacyTempRoot,
+        };
 
         Process[] processes;
         try
@@ -89,6 +97,7 @@ public sealed class StartupReaper : IStartupReaper
         }
 
         TryRemoveStaleLocks(tunnelCoreRoot);
+        TryRemoveStaleLocks(legacyTunnelCoreRoot);
 
         if (killed > 0)
         {

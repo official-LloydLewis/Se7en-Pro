@@ -37,10 +37,19 @@ public sealed partial class MainViewModel : ObservableObject
             SelectedPage = Pages.FirstOrDefault(p => p.Route == vm.Route);
         };
 
+        _settings.SettingsChanged += (_, _) => OnPropertyChanged(nameof(AppFlowDirection));
+
         _navigation.NavigateTo("home");
     }
 
     public ObservableCollection<PageViewModelBase> Pages { get; }
+
+    public string AppName => AppBrand.Name;
+
+    public FlowDirection AppFlowDirection =>
+        string.Equals(_settings.Settings.Language, "fa", StringComparison.OrdinalIgnoreCase)
+            ? FlowDirection.RightToLeft
+            : FlowDirection.LeftToRight;
 
     [ObservableProperty]
     private PageViewModelBase? _currentPage;
@@ -91,7 +100,7 @@ public sealed partial class MainViewModel : ObservableObject
     [RelayCommand]
     private static void OpenTelegramChannel()
     {
-        const string url = "https://t.me/King_Network7";
+        var url = AppBrand.TelegramUrl;
         try
         {
             Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });

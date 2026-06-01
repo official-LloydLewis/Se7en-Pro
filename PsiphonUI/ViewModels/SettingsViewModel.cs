@@ -20,14 +20,23 @@ public sealed class CloseActionOption
     public override string ToString() => Display;
 }
 
+public sealed class LanguageOption
+{
+    public string Value { get; init; } = "";
+    public string Display { get; init; } = "";
+    public override string ToString() => Display;
+}
+
 public sealed partial class SettingsViewModel : PageViewModelBase
 {
     private readonly ISettingsService _settingsService;
     private readonly IThemeService _themeService;
     private readonly ITunnelCoreManager _tunnel;
+    private readonly ISystemProxyService _systemProxy;
     private readonly IStartupRegistration _startup;
 
     private bool _suppressThemeSideEffects;
+    private bool _suppressLanguageSideEffects;
 
     private bool _suppressRegionSideEffects;
 
@@ -39,15 +48,18 @@ public sealed partial class SettingsViewModel : PageViewModelBase
         ISettingsService settingsService,
         IThemeService themeService,
         ITunnelCoreManager tunnel,
+        ISystemProxyService systemProxy,
         IStartupRegistration startup)
     {
         _settingsService = settingsService;
         _themeService = themeService;
         _tunnel = tunnel;
+        _systemProxy = systemProxy;
         _startup = startup;
 
         var s = _settingsService.Settings;
         _selectedTheme = s.Theme;
+        _selectedLanguage = string.Equals(s.Language, "fa", StringComparison.OrdinalIgnoreCase) ? "fa" : "en";
         _selectedRegion = string.IsNullOrEmpty(s.EgressRegion) ? "auto" : s.EgressRegion;
         _setSystemProxy = s.SetSystemProxy;
         _disableTimeouts = s.DisableTimeouts;
@@ -195,6 +207,12 @@ public sealed partial class SettingsViewModel : PageViewModelBase
 
     public ObservableCollection<string> Themes { get; } = new() { "dark", "light", "system" };
 
+    public ObservableCollection<LanguageOption> Languages { get; } = new()
+    {
+        new LanguageOption { Value = "en", Display = "English" },
+        new LanguageOption { Value = "fa", Display = "فارسی (راست‌به‌چپ)" },
+    };
+
     public ObservableCollection<Country> Regions { get; } = CountryHelper.BuildSeedRegions();
 
     [ObservableProperty] private string _selectedTheme = "dark";
@@ -204,6 +222,14 @@ public sealed partial class SettingsViewModel : PageViewModelBase
         _settingsService.Settings.Theme = value;
         _settingsService.Save();
         _themeService.ApplyTheme(value);
+    }
+
+    [ObservableProperty] private string _selectedLanguage = "en";
+    partial void OnSelectedLanguageChanged(string value)
+    {
+        if (_suppressLanguageSideEffects) return;
+        _settingsService.Settings.Language = string.Equals(value, "fa", StringComparison.OrdinalIgnoreCase) ? "fa" : "en";
+        _settingsService.Save();
     }
 
     [ObservableProperty] private string _selectedRegion = "auto";
@@ -218,7 +244,22 @@ public sealed partial class SettingsViewModel : PageViewModelBase
     }
 
     [ObservableProperty] private bool _setSystemProxy;
-    partial void OnSetSystemProxyChanged(bool value) { _settingsService.Settings.SetSystemProxy = value; _settingsService.Save(); }
+    partial void OnSetSystemProxyChanged(bool value)
+    {
+        _settingsService.Settings.SetSystemProxy = value;
+        _settingsService.Save();
+
+        if (_tunnel.State != ConnectionState.Connected) return;
+
+        if (value && _tunnel.HttpProxyPort > 0)
+        {
+            _systemProxy.Set(_tunnel.HttpProxyPort);
+        }
+        else
+        {
+            _systemProxy.Clear();
+        }
+    }
 
     [ObservableProperty] private bool _disableTimeouts;
     partial void OnDisableTimeoutsChanged(bool value) { _settingsService.Settings.DisableTimeouts = value; _settingsService.Save(); }
@@ -380,6 +421,14 @@ public sealed partial class SettingsViewModel : PageViewModelBase
             _suppressThemeSideEffects = true;
             try { SelectedTheme = s.Theme; }
             finally { _suppressThemeSideEffects = false; }
+        }
+
+        var externalLanguage = string.Equals(s.Language, "fa", StringComparison.OrdinalIgnoreCase) ? "fa" : "en";
+        if (!string.Equals(SelectedLanguage, externalLanguage, StringComparison.Ordinal))
+        {
+            _suppressLanguageSideEffects = true;
+            try { SelectedLanguage = externalLanguage; }
+            finally { _suppressLanguageSideEffects = false; }
         }
 
         var externalRegion = string.IsNullOrEmpty(s.EgressRegion) ? "auto" : s.EgressRegion;

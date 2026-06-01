@@ -7,7 +7,7 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         mc:Ignorable="d"
-        Title="PsiphonUI"
+        Title="Se7en Pro"
         Icon="pack://application:,,,/Assets/app.ico"
         Width="1100" Height="720"
         MinWidth="900" MinHeight="600"
@@ -19,6 +19,7 @@
         Background="{DynamicResource MaterialDesignPaper}"
         TextElement.Foreground="{DynamicResource MaterialDesignBody}"
         FontFamily="{StaticResource UI.FontFamily}"
+        FlowDirection="{Binding AppFlowDirection}"
         TextOptions.TextFormattingMode="Display"
         TextOptions.TextRenderingMode="ClearType"
         UseLayoutRounding="True"
@@ -75,10 +76,10 @@
 
                 <StackPanel Orientation="Horizontal" Grid.Column="0"
                             Margin="14,0,0,0" VerticalAlignment="Center">
-                    <materialDesign:PackIcon Kind="ShieldLockOutline"
-                                              Width="20" Height="20"
-                                              Foreground="{StaticResource Brand.PrimaryBrush}" />
-                    <TextBlock Text="PsiphonUI" Margin="8,0,0,0"
+                    <Image Width="22" Height="22"
+                           Source="pack://application:,,,/Assets/app-icon.png"
+                           RenderOptions.BitmapScalingMode="HighQuality" />
+                    <TextBlock Text="{Binding AppName}" Margin="8,0,0,0"
                                VerticalAlignment="Center"
                                FontSize="14" FontWeight="SemiBold" />
                 </StackPanel>
@@ -141,7 +142,7 @@
 <Button DockPanel.Dock="Bottom"
                                 Style="{StaticResource UI.TelegramButton}"
                                 Margin="12,4,12,6"
-                                ToolTip="Open the King Network Telegram channel in your browser"
+                                ToolTip="Open the Se7en Pro Telegram channel in your browser"
                                 Command="{Binding OpenTelegramChannelCommand}">
                             <Grid>
                                 <Grid.ColumnDefinitions>

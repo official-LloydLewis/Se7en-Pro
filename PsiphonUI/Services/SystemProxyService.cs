@@ -29,6 +29,12 @@ public sealed class SystemProxyService : ISystemProxyService
 
     public void Set(int httpProxyPort)
     {
+        if (httpProxyPort <= 0)
+        {
+            _logger.LogWarning("Refusing to set system proxy to invalid port {Port}", httpProxyPort);
+            return;
+        }
+
         try
         {
             using var key = Registry.CurrentUser.OpenSubKey(InternetSettingsKey, writable: true);
@@ -38,7 +44,7 @@ public sealed class SystemProxyService : ISystemProxyService
                 return;
             }
 
-            if (!File.Exists(BackupPath))
+            if (!HasAnyBackup())
             {
                 var backup = new ProxyBackup
                 {
@@ -48,10 +54,13 @@ public sealed class SystemProxyService : ISystemProxyService
                 };
                 WriteBackup(backup);
             }
+            else
+            {
+                TryMigrateLegacyBackup();
+            }
 
             key.SetValue("ProxyEnable", 1, RegistryValueKind.DWord);
             key.SetValue("ProxyServer", $"127.0.0.1:{httpProxyPort}", RegistryValueKind.String);
-
             key.SetValue("ProxyOverride", "<local>", RegistryValueKind.String);
 
             NotifyWinINet();
@@ -73,24 +82,8 @@ public sealed class SystemProxyService : ISystemProxyService
             var backup = ReadBackup();
             if (backup is not null)
             {
-                key.SetValue("ProxyEnable", backup.ProxyEnable, RegistryValueKind.DWord);
-                if (string.IsNullOrEmpty(backup.ProxyServer))
-                {
-                    try { key.DeleteValue("ProxyServer", throwOnMissingValue: false); } catch { }
-                }
-                else
-                {
-                    key.SetValue("ProxyServer", backup.ProxyServer, RegistryValueKind.String);
-                }
-                if (string.IsNullOrEmpty(backup.ProxyOverride))
-                {
-                    try { key.DeleteValue("ProxyOverride", throwOnMissingValue: false); } catch { }
-                }
-                else
-                {
-                    key.SetValue("ProxyOverride", backup.ProxyOverride, RegistryValueKind.String);
-                }
-                TryDeleteBackup();
+                RestoreBackup(key, backup);
+                TryDeleteBackups();
             }
             else
             {
@@ -124,17 +117,42 @@ public sealed class SystemProxyService : ISystemProxyService
         }
     }
 
+    private static void RestoreBackup(RegistryKey key, ProxyBackup backup)
+    {
+        key.SetValue("ProxyEnable", backup.ProxyEnable, RegistryValueKind.DWord);
+        SetOrDeleteValue(key, "ProxyServer", backup.ProxyServer);
+        SetOrDeleteValue(key, "ProxyOverride", backup.ProxyOverride);
+    }
+
+    private static void SetOrDeleteValue(RegistryKey key, string name, string value)
+    {
+        if (string.IsNullOrEmpty(value))
+        {
+            key.DeleteValue(name, throwOnMissingValue: false);
+        }
+        else
+        {
+            key.SetValue(name, value, RegistryValueKind.String);
+        }
+    }
+
     private static void NotifyWinINet()
     {
-
         InternetSetOption(IntPtr.Zero, INTERNET_OPTION_SETTINGS_CHANGED, IntPtr.Zero, 0);
         InternetSetOption(IntPtr.Zero, INTERNET_OPTION_REFRESH, IntPtr.Zero, 0);
     }
 
     private static string BackupPath => Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+        AppBrand.SafeName,
+        "proxy-backup.json");
+
+    private static string LegacyBackupPath => Path.Combine(
+        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
         "Psiphon",
         "proxy-backup.json");
+
+    private static bool HasAnyBackup() => File.Exists(BackupPath) || File.Exists(LegacyBackupPath);
 
     private sealed class ProxyBackup
     {
@@ -160,22 +178,43 @@ public sealed class SystemProxyService : ISystemProxyService
     {
         try
         {
-            if (!File.Exists(BackupPath)) return null;
-            return JsonSerializer.Deserialize<ProxyBackup>(File.ReadAllText(BackupPath));
+            var path = File.Exists(BackupPath) ? BackupPath : LegacyBackupPath;
+            if (!File.Exists(path)) return null;
+            return JsonSerializer.Deserialize<ProxyBackup>(File.ReadAllText(path));
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Could not read proxy backup at {Path}", BackupPath);
+            _logger.LogWarning(ex, "Could not read proxy backup");
             return null;
         }
     }
 
-    private void TryDeleteBackup()
+    private void TryMigrateLegacyBackup()
     {
-        try { File.Delete(BackupPath); }
+        try
+        {
+            if (File.Exists(BackupPath) || !File.Exists(LegacyBackupPath)) return;
+            Directory.CreateDirectory(Path.GetDirectoryName(BackupPath)!);
+            File.Copy(LegacyBackupPath, BackupPath, overwrite: false);
+        }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Could not delete proxy backup at {Path}", BackupPath);
+            _logger.LogWarning(ex, "Could not migrate legacy proxy backup from {Path}", LegacyBackupPath);
+        }
+    }
+
+    private void TryDeleteBackups()
+    {
+        TryDeleteBackup(BackupPath);
+        TryDeleteBackup(LegacyBackupPath);
+    }
+
+    private void TryDeleteBackup(string path)
+    {
+        try { File.Delete(path); }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Could not delete proxy backup at {Path}", path);
         }
     }
 }

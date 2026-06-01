@@ -28,6 +28,8 @@ public sealed class TunnelCoreManager : ITunnelCoreManager, IDisposable
     private string? _workDir;
     private volatile bool _userWantsConnection;
     private CancellationTokenSource? _retryDelayCts;
+    private readonly SemaphoreSlim _lifecycleGate = new(1, 1);
+    private volatile bool _disposed;
 
     public TunnelCoreManager(
         ILogger<TunnelCoreManager> logger,
@@ -74,6 +76,21 @@ public sealed class TunnelCoreManager : ITunnelCoreManager, IDisposable
 
     public async Task StartAsync()
     {
+        await _lifecycleGate.WaitAsync();
+        try
+        {
+            await StartCoreAsync();
+        }
+        finally
+        {
+            _lifecycleGate.Release();
+        }
+    }
+
+    private async Task StartCoreAsync()
+    {
+        if (_disposed) return;
+
         _userWantsConnection = true;
         CancelPendingRestart();
 
@@ -84,7 +101,7 @@ public sealed class TunnelCoreManager : ITunnelCoreManager, IDisposable
         }
 
         SetState(ConnectionState.Connecting);
-        AppendLog("Starting tunnel...");
+        AppendLog("Starting secure tunnel...");
 
         BytesSent = 0;
         BytesReceived = 0;
@@ -94,11 +111,12 @@ public sealed class TunnelCoreManager : ITunnelCoreManager, IDisposable
         BytesTransferredChanged?.Invoke(this, EventArgs.Empty);
         RouteChanged?.Invoke(this, EventArgs.Empty);
 
+        Process? startedProcess = null;
         try
         {
             _workDir = Path.Combine(
                 Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-                "Psiphon",
+                AppBrand.SafeName,
                 "tunnel-core");
             Directory.CreateDirectory(_workDir);
 
@@ -108,6 +126,7 @@ public sealed class TunnelCoreManager : ITunnelCoreManager, IDisposable
 
             var serverListPath = WriteEmbeddedServerList();
 
+            _cts?.Dispose();
             _cts = new CancellationTokenSource();
 
             var psi = new ProcessStartInfo
@@ -128,32 +147,36 @@ public sealed class TunnelCoreManager : ITunnelCoreManager, IDisposable
                 psi.ArgumentList.Add(serverListPath);
             }
 
-            _process = new Process { StartInfo = psi, EnableRaisingEvents = true };
-            _process.OutputDataReceived += (_, e) => OnLineReceived(e.Data, stderr: false);
-            _process.ErrorDataReceived += (_, e) => OnLineReceived(e.Data, stderr: true);
-            _process.Exited += OnProcessExited;
+            startedProcess = new Process { StartInfo = psi, EnableRaisingEvents = true };
+            startedProcess.OutputDataReceived += (_, e) => OnLineReceived(e.Data, stderr: false);
+            startedProcess.ErrorDataReceived += (_, e) => OnLineReceived(e.Data, stderr: true);
+            startedProcess.Exited += OnProcessExited;
 
-            if (!_process.Start())
+            if (!startedProcess.Start())
             {
                 throw new InvalidOperationException("Failed to start psiphon-tunnel-core.exe");
             }
 
-            _childGuard.Adopt(_process);
+            _process = startedProcess;
+            _childGuard.Adopt(startedProcess);
 
-            _process.BeginOutputReadLine();
-            _process.BeginErrorReadLine();
+            startedProcess.BeginOutputReadLine();
+            startedProcess.BeginErrorReadLine();
 
-            _logger.LogInformation("psiphon-tunnel-core started (pid {Pid})", _process.Id);
+            _logger.LogInformation("psiphon-tunnel-core started (pid {Pid})", startedProcess.Id);
+            AppendLog("Tunnel engine started. Waiting for a secure route...");
             await Task.CompletedTask;
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to start tunnel");
-            AppendLog($"Failed to start: {ex.Message}");
+            AppendLog($"Could not start the tunnel engine: {ex.Message}");
+            CleanupFailedStart(startedProcess);
             _process = null;
+            _systemProxy.Clear();
             if (_userWantsConnection)
             {
-                AppendLog("Auto-retrying in a few seconds...");
+                AppendLog("Retrying automatically in a few seconds...");
                 SetState(ConnectionState.Connecting);
                 ScheduleAutoRestart(TimeSpan.FromSeconds(5));
             }
@@ -161,6 +184,27 @@ public sealed class TunnelCoreManager : ITunnelCoreManager, IDisposable
             {
                 SetState(ConnectionState.Disconnected);
             }
+        }
+    }
+
+    private void CleanupFailedStart(Process? process)
+    {
+        if (process is null) return;
+
+        try
+        {
+            if (!process.HasExited)
+            {
+                process.Kill(entireProcessTree: true);
+            }
+        }
+        catch (Exception killEx)
+        {
+            _logger.LogWarning(killEx, "Failed to clean up partially started tunnel process");
+        }
+        finally
+        {
+            process.Dispose();
         }
     }
 
@@ -178,6 +222,19 @@ public sealed class TunnelCoreManager : ITunnelCoreManager, IDisposable
 
     public async Task StopAsync()
     {
+        await _lifecycleGate.WaitAsync();
+        try
+        {
+            await StopCoreAsync();
+        }
+        finally
+        {
+            _lifecycleGate.Release();
+        }
+    }
+
+    private async Task StopCoreAsync()
+    {
         _userWantsConnection = false;
         CancelPendingRestart();
 
@@ -190,7 +247,7 @@ public sealed class TunnelCoreManager : ITunnelCoreManager, IDisposable
         }
 
         SetState(ConnectionState.Disconnecting);
-        AppendLog("Stopping tunnel...");
+        AppendLog("Stopping tunnel and cleaning local proxy settings...");
 
         try
         {
@@ -247,19 +304,32 @@ public sealed class TunnelCoreManager : ITunnelCoreManager, IDisposable
 
     private void OnProcessExited(object? sender, EventArgs e)
     {
-        var exitCode = _process?.ExitCode ?? -1;
+        var exitedProcess = sender as Process;
+        var exitCode = -1;
+        try { exitCode = exitedProcess?.ExitCode ?? -1; } catch { }
         _logger.LogInformation("psiphon-tunnel-core exited with code {Code}", exitCode);
 
-        _process = null;
+        if (ReferenceEquals(_process, exitedProcess))
+        {
+            _process = null;
+        }
 
         if (State == ConnectionState.Disconnecting)
         {
             return;
         }
 
+        _systemProxy.Clear();
+
+        if (_disposed)
+        {
+            SetState(ConnectionState.Disconnected);
+            return;
+        }
+
         if (_userWantsConnection)
         {
-            AppendLog("tunnel-core exited unexpectedly; auto-restarting...");
+            AppendLog("Tunnel engine stopped unexpectedly; reconnecting...");
             SetState(ConnectionState.Connecting);
             ScheduleAutoRestart(TimeSpan.FromSeconds(3));
         }
@@ -271,6 +341,8 @@ public sealed class TunnelCoreManager : ITunnelCoreManager, IDisposable
 
     private void ScheduleAutoRestart(TimeSpan delay)
     {
+        if (_disposed) return;
+
         CancelPendingRestart();
         var cts = new CancellationTokenSource();
         _retryDelayCts = cts;
@@ -284,7 +356,7 @@ public sealed class TunnelCoreManager : ITunnelCoreManager, IDisposable
             {
                 return;
             }
-            if (!_userWantsConnection) return;
+            if (!_userWantsConnection || _disposed) return;
             try { await StartAsync(); }
             catch (Exception ex)
             {
@@ -683,7 +755,7 @@ public sealed class TunnelCoreManager : ITunnelCoreManager, IDisposable
         }
     }
 
-    private const string CachedTunnelExeName = "PsiphonUI.Tunnel.exe";
+    private const string CachedTunnelExeName = "Se7enPro.Tunnel.exe";
 
     private string ResolveTunnelCoreExe()
     {
@@ -698,7 +770,7 @@ public sealed class TunnelCoreManager : ITunnelCoreManager, IDisposable
             if (!File.Exists(bundled))
             {
                 throw new FileNotFoundException(
-                    "psiphon-tunnel-core.exe not found next to PsiphonUI",
+                    "psiphon-tunnel-core.exe not found next to " + AppBrand.Name,
                     bundled);
             }
         }
@@ -806,9 +878,13 @@ public sealed class TunnelCoreManager : ITunnelCoreManager, IDisposable
 
     public void Dispose()
     {
+        _disposed = true;
+        _userWantsConnection = false;
+        CancelPendingRestart();
         try { _cts?.Cancel(); } catch {  }
         try { _process?.Kill(entireProcessTree: true); } catch {  }
         _process?.Dispose();
         _cts?.Dispose();
+        _lifecycleGate.Dispose();
     }
 }

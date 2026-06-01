@@ -14,7 +14,7 @@
                     Margin="32,24,32,32">
             <TextBlock Style="{StaticResource UI.Title}" Text="{Binding Title}" />
             <TextBlock Style="{StaticResource UI.Subtitle}"
-                       Text="PsiphonUI — a modern, lightweight Windows client."
+                       Text="Se7en Pro — a modern, lightweight Windows client."
                        Margin="0,0,0,20" />
 
             <Border Style="{StaticResource UI.Card}">

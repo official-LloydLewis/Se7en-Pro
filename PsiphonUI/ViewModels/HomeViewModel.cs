@@ -152,7 +152,7 @@ public sealed partial class HomeViewModel : PageViewModelBase
             MessageBox.Show(
                 "System-wide tunneling needs Administrator privileges to install "
               + "the virtual network adapter (WinTUN).\n\n"
-              + "Close PsiphonUI and re-launch it by right-clicking → \"Run as administrator\", "
+              + "Close Se7en Pro and re-launch it by right-clicking → \"Run as administrator\", "
               + "then try again.",
                 "Administrator privileges required",
                 MessageBoxButton.OK,
@@ -174,17 +174,17 @@ public sealed partial class HomeViewModel : PageViewModelBase
         {
 
             if (!IsAdminElevated)
-                return "Run PsiphonUI as Administrator to enable system-wide tunneling.";
+                return "Run Se7en Pro as Administrator to enable system-wide tunneling.";
 
             return _tun.State switch
             {
                 TunState.Starting => "Starting TUN…",
-                TunState.Running => "All traffic is routed through PsiphonUI.",
+                TunState.Running => "All traffic is routed through Se7en Pro.",
                 TunState.Stopping => "Stopping TUN…",
                 TunState.Error => _tun.LastError ?? "TUN failed to start.",
                 _ => TunModeEnabled
-                    ? "Will start automatically when PsiphonUI connects."
-                    : "Only apps that honor the system proxy will use PsiphonUI.",
+                    ? "Will start automatically when Se7en Pro connects."
+                    : "Only apps that honor the system proxy will use Se7en Pro.",
             };
         }
     }
@@ -262,11 +262,11 @@ public sealed partial class HomeViewModel : PageViewModelBase
         State = s;
         (StatusText, StatusDetail, IsBusy) = s switch
         {
-            ConnectionState.Connected => ("Connected", $"HTTP: 127.0.0.1:{_tunnel.HttpProxyPort}  •  SOCKS: 127.0.0.1:{_tunnel.SocksProxyPort}", false),
-            ConnectionState.Connecting => ("Connecting…", "Establishing tunnel", true),
-            ConnectionState.Disconnecting => ("Disconnecting…", "Cleaning up", true),
-            ConnectionState.Error => ("Connection error", "See logs for details", false),
-            _ => ("Disconnected", "Tap the button to connect", false),
+            ConnectionState.Connected => ("Protected", $"Local proxies are ready  •  HTTP 127.0.0.1:{_tunnel.HttpProxyPort}  •  SOCKS 127.0.0.1:{_tunnel.SocksProxyPort}", false),
+            ConnectionState.Connecting => ("Securing connection…", "Starting the tunnel engine and selecting the best route", true),
+            ConnectionState.Disconnecting => ("Disconnecting safely…", "Stopping helper processes and restoring proxy settings", true),
+            ConnectionState.Error => ("Connection needs attention", "Open Logs for details, then try Connect again", false),
+            _ => ("Ready to connect", "Tap Connect to start a secure tunnel", false),
         };
 
         if (s == ConnectionState.Connected)

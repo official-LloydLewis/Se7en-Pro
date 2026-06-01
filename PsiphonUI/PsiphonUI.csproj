@@ -11,7 +11,7 @@
     <Nullable>enable</Nullable>
     <LangVersion>latest</LangVersion>
     <RootNamespace>PsiphonUI</RootNamespace>
-    <AssemblyName>PsiphonUI</AssemblyName>
+    <AssemblyName>Se7enPro</AssemblyName>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <EnableWindowsTargeting>true</EnableWindowsTargeting>
     <Platforms>x64;x86;AnyCPU</Platforms>
@@ -21,9 +21,9 @@
     <Version>1.0.1</Version>
     <AssemblyVersion>1.0.1.0</AssemblyVersion>
     <FileVersion>1.0.1.0</FileVersion>
-    <Product>PsiphonUI</Product>
-    <Company>PsiphonUI</Company>
-    <Description>PsiphonUI — modern Windows client (sample/open-source build)</Description>
+    <Product>Se7en Pro</Product>
+    <Company>King Network</Company>
+    <Description>Se7en Pro — stable personalized Windows client based on Psiphon</Description>
 
     <ApplicationIcon>Assets\app.ico</ApplicationIcon>
   </PropertyGroup>
