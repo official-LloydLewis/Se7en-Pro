@@ -19,7 +19,7 @@ public sealed class SingBoxTunManager : ITunManager
 {
     private const string TunInterfaceName = "psiphonui_tun";
 
-    private const string CachedSingBoxExeName = "PsiphonUI.Helper.exe";
+    private const string CachedSingBoxExeName = "Se7enPro.Helper.exe";
 
     /// <summary>
     /// Process name of the psiphon-tunnel-core child process.
@@ -28,7 +28,7 @@ public sealed class SingBoxTunManager : ITunManager
     /// TUN → SOCKS loop) so that tunnel-core can freely establish
     /// and rotate Psiphon server connections.
     /// </summary>
-    private const string TunnelCoreExeName = "PsiphonUI.Tunnel.exe";
+    private const string TunnelCoreExeName = "Se7enPro.Tunnel.exe";
 
     private const int TunMtu = 1420;
 
@@ -274,7 +274,7 @@ public sealed class SingBoxTunManager : ITunManager
         {
             _workDir = Path.Combine(
                 Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-                "Psiphon",
+                AppBrand.SafeName,
                 "singbox-tun");
             Directory.CreateDirectory(_workDir);
 
@@ -282,7 +282,7 @@ public sealed class SingBoxTunManager : ITunManager
 
             var diagDir = Path.Combine(
                 Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-                "Psiphon", "logs");
+                AppBrand.SafeName, "logs");
             Directory.CreateDirectory(diagDir);
             _singBoxLogPath = Path.Combine(diagDir, "sing-box-tun.log");
             try
@@ -512,13 +512,18 @@ public sealed class SingBoxTunManager : ITunManager
     {
         try
         {
-            var legacy = Path.Combine(
-                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-                "Psiphon",
-                "xray-tun");
-            if (Directory.Exists(legacy))
+            var localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+            var roots = new[]
             {
-                Directory.Delete(legacy, recursive: true);
+                Path.Combine(localAppData, AppBrand.SafeName, "xray-tun"),
+                Path.Combine(localAppData, "Psiphon", "xray-tun"),
+            };
+            foreach (var legacy in roots)
+            {
+                if (Directory.Exists(legacy))
+                {
+                    Directory.Delete(legacy, recursive: true);
+                }
             }
         }
         catch (Exception ex)

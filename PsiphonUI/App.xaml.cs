@@ -19,8 +19,8 @@ public partial class App : Application
 {
     public static IServiceProvider Services { get; private set; } = null!;
 
-    private const string SingleInstanceMutexName = "Global\\PsiphonUI_SingleInstance";
-    private const string ShowWindowEventName = "Global\\PsiphonUI_ShowWindowEvent";
+    private const string SingleInstanceMutexName = "Global\\Se7enPro_SingleInstance";
+    private const string ShowWindowEventName = "Global\\Se7enPro_ShowWindowEvent";
 
     private Mutex? _singleInstanceMutex;
     private EventWaitHandle? _showWindowEvent;
@@ -90,6 +90,10 @@ public partial class App : Application
         AppDomain.CurrentDomain.UnhandledException += OnAppDomainUnhandledException;
 
         SessionEnding += OnSessionEnding;
+
+        var mainWindow = new MainWindow();
+        MainWindow = mainWindow;
+        mainWindow.Show();
     }
 
     private void ShowWindowListenerLoop()
@@ -205,17 +209,23 @@ public partial class App : Application
 
         try
         {
-
             var tun = Services?.GetService<ITunManager>();
             if (tun is not null) tun.DisposeAsync().AsTask().GetAwaiter().GetResult();
-
-            Services?.GetService<ITunnelCoreManager>()?.StopAsync().GetAwaiter().GetResult();
-            Services?.GetService<ISystemProxyService>()?.Clear();
         }
         catch
         {
-
         }
+
+        try
+        {
+            Services?.GetService<ITunnelCoreManager>()?.StopAsync().GetAwaiter().GetResult();
+        }
+        catch
+        {
+        }
+
+        try { Services?.GetService<ISystemProxyService>()?.Clear(); }
+        catch { }
 
         try { Services?.GetService<ITrayIconService>()?.Dispose(); }
         catch { }
@@ -290,7 +300,7 @@ public partial class App : Application
         {
             var logDir = Path.Combine(
                 Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-                "Psiphon",
+                AppBrand.SafeName,
                 "logs");
             Directory.CreateDirectory(logDir);
             File.AppendAllText(
@@ -304,7 +314,7 @@ public partial class App : Application
 
         MessageBox.Show(
             $"An unexpected error occurred:\n\n{ex.Message}",
-            "PsiphonUI",
+            AppBrand.Name,
             MessageBoxButton.OK,
             MessageBoxImage.Error);
     }

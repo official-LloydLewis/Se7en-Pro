@@ -59,6 +59,16 @@
                     <TextBlock Style="{StaticResource UI.FieldLabel}" Text="THEME" />
                     <ComboBox ItemsSource="{Binding Themes}" SelectedItem="{Binding SelectedTheme}"
                               HorizontalAlignment="Stretch" />
+
+                    <TextBlock Style="{StaticResource UI.FieldLabel}" Text="LANGUAGE / زبان" Margin="0,14,0,0" />
+                    <ComboBox ItemsSource="{Binding Languages}"
+                              SelectedValue="{Binding SelectedLanguage}"
+                              SelectedValuePath="Value"
+                              DisplayMemberPath="Display"
+                              HorizontalAlignment="Stretch" />
+                    <TextBlock Style="{StaticResource UI.Caption}"
+                               Text="Persian mode enables right-to-left layout and Persian-friendly fonts. برنامه از چیدمان راست‌به‌چپ پشتیبانی می‌کند."
+                               TextWrapping="Wrap" Margin="0,6,0,0" />
                 </StackPanel>
             </Border>
 
@@ -288,7 +298,7 @@
                               HorizontalAlignment="Stretch"
                               ToolTip="What should happen when you press the window's X button" />
                     <TextBlock Style="{StaticResource UI.FieldHelper}"
-                               Text="Pick a default action or let PsiphonUI ask each time."
+                               Text="Pick a default action or let Se7en Pro ask each time."
                                Margin="0,4,0,0" />
                 </StackPanel>
             </Border>
@@ -330,7 +340,7 @@
                                      GroupName="ProtocolMode"
                                      Style="{StaticResource UI.SegmentedPill}"
                                      Content="Auto"
-                                     ToolTip="Let PsiphonUI pick the best protocol for current network conditions"
+                                     ToolTip="Let Se7en Pro pick the best protocol for current network conditions"
                                      IsChecked="{Binding SelectedProtocolMode, Mode=TwoWay, Converter={StaticResource StringEquals}, ConverterParameter=auto}" />
                         <RadioButton Grid.Column="2"
                                      GroupName="ProtocolMode"

@@ -1,9 +1,9 @@
 <ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
 
-<Color x:Key="Brand.PrimaryColor">#7C3AED</Color>
-    <Color x:Key="Brand.PrimaryDarkColor">#5B21B6</Color>
-    <Color x:Key="Brand.AccentColor">#06B6D4</Color>
+<Color x:Key="Brand.PrimaryColor">#8B5CF6</Color>
+    <Color x:Key="Brand.PrimaryDarkColor">#6D28D9</Color>
+    <Color x:Key="Brand.AccentColor">#22D3EE</Color>
     <Color x:Key="Brand.SuccessColor">#10B981</Color>
     <Color x:Key="Brand.WarningColor">#F59E0B</Color>
     <Color x:Key="Brand.ErrorColor">#EF4444</Color>
@@ -28,9 +28,9 @@
         <GradientStop Color="{StaticResource Brand.TelegramDarkColor}" Offset="1" />
     </LinearGradientBrush>
 
-<SolidColorBrush x:Key="Surface.SubtleBg" Color="#14FFFFFF" />
-    <SolidColorBrush x:Key="Surface.SubtleBorder" Color="#22FFFFFF" />
-    <SolidColorBrush x:Key="Surface.HoverBg" Color="#14FFFFFF" />
-    <SolidColorBrush x:Key="Surface.SelectedBg" Color="#1FFFFFFF" />
+<SolidColorBrush x:Key="Surface.SubtleBg" Color="#1AFFFFFF" />
+    <SolidColorBrush x:Key="Surface.SubtleBorder" Color="#2EFFFFFF" />
+    <SolidColorBrush x:Key="Surface.HoverBg" Color="#24FFFFFF" />
+    <SolidColorBrush x:Key="Surface.SelectedBg" Color="#33FFFFFF" />
 
 </ResourceDictionary>

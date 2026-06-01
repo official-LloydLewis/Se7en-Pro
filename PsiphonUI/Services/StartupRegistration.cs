@@ -7,7 +7,7 @@ public sealed class StartupRegistration : IStartupRegistration
 {
     private const string RunKeyPath = @"Software\Microsoft\Windows\CurrentVersion\Run";
 
-    private const string ValueName = "PsiphonUI";
+    private const string ValueName = AppBrand.SafeName;
 
     public bool IsEnabled()
     {

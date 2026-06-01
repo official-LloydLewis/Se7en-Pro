@@ -1,9 +1,9 @@
-# PsiphonUI build helper.
+# Se7en Pro build helper.
 #
 # Usage:
 #   .\build.ps1              # Restore + build (Release, framework-dependent).
 #   .\build.ps1 -Publish     # Publish a single, self-contained, compressed exe.
-#   .\build.ps1 -Run         # Build then launch PsiphonUI.exe.
+#   .\build.ps1 -Run         # Build then launch Se7enPro.exe.
 param(
     [switch]$Publish,
     [switch]$Run
@@ -20,10 +20,10 @@ try {
             -p:PublishSingleFile=true `
             -p:IncludeNativeLibrariesForSelfExtract=true `
             -p:EnableCompressionInSingleFile=true
-        $exe = Join-Path $projectDir 'bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\PsiphonUI.exe'
+        $exe = Join-Path $projectDir 'bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\Se7enPro.exe'
     } else {
         dotnet build -c Release -r win-x64 --self-contained false
-        $exe = Join-Path $projectDir 'bin\Release\net8.0-windows10.0.19041.0\win-x64\PsiphonUI.exe'
+        $exe = Join-Path $projectDir 'bin\Release\net8.0-windows10.0.19041.0\win-x64\Se7enPro.exe'
     }
 
     if ($LASTEXITCODE -ne 0) {

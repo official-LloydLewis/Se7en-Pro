@@ -175,7 +175,7 @@
                                   IsChecked="{Binding TunModeEnabled, Mode=TwoWay}"
                                   IsEnabled="{Binding IsAdminElevated}"
                                   VerticalAlignment="Center"
-                                  ToolTip="Route every app's traffic through PsiphonUI (needs Administrator)" />
+                                  ToolTip="Route every app's traffic through Se7en Pro (needs Administrator)" />
                 </Grid>
             </Border>
         </Grid>

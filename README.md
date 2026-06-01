@@ -1,16 +1,19 @@
-# PsiphonUI
+# Se7en Pro
 
-A modern, MVVM-based Windows desktop client built on top of the official
+A personalized, MVVM-based Windows desktop client built on top of the official
 [Psiphon 3](https://github.com/Psiphon-Inc/psiphon-windows) network tunnel.
 This project provides only the UI / orchestration layer in C# / WPF /
 [.NET 8](https://dotnet.microsoft.com/) — it does **not** include any
 Psiphon credentials, server lists, or sponsor identifiers. Those are
 provided by you (see [Configuration](#configuration) below).
 
-The repo is published as a clean starting point for anyone who wants to
-build their own Windows UI around `psiphon-tunnel-core.exe`.
+This branch is branded as Se7en Pro while preserving the original tunneling/protocol behavior around `psiphon-tunnel-core.exe`.
 
 ---
+
+## Python rewrite
+
+A Python/PySide6 rewrite is available under `python_client/`. It launches the same external `psiphon-tunnel-core.exe` process and keeps branded settings/proxy migration behavior in Python. See `python_client/README.md` for run and packaging commands.
 
 ## Features
 
@@ -135,7 +138,7 @@ it with your product name if you publish a downstream build.
 
 ```bash
 cd PsiphonUI\bin\Release\net8.0-windows10.0.19041.0\win-x64
-.\PsiphonUI.exe
+.\Se7enPro.exe
 ```
 
 On first run the app creates `%LOCALAPPDATA%\PsiphonUI\` for settings and
