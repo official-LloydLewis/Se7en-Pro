@@ -11,6 +11,10 @@ This branch is branded as Se7en Pro while preserving the original tunneling/prot
 
 ---
 
+## Python rewrite
+
+A Python/PySide6 rewrite is available under `python_client/`. It launches the same external `psiphon-tunnel-core.exe` process and keeps branded settings/proxy migration behavior in Python. See `python_client/README.md` for run and packaging commands.
+
 ## Features
 
 - WPF + [Material Design In XAML Toolkit](https://github.com/MaterialDesignInXAML/MaterialDesignInXamlToolkit)
